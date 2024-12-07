@@ -1,26 +1,34 @@
-def possible(total, values, concat=False):
-    possible = [0]
-    for value in values:
+from itertools import islice
+
+def possible(values, concat=False):
+    total, possible = values[0], [values[1]]
+    for value in islice(values, 2, len(values) - 1):
         m = 10 ** len(str(value))
-        new = [x * value for x in possible]
-        new += [x + value for x in possible]
-        if concat:
-            new += [x * m + value for x in possible]
+        new = []
+        for x in possible:
+            if x > total:
+                continue
+            new.append(x * value)
+            new.append(x + value)
+            if concat:
+                new.append(x * m + value)
         possible = new
-    return total in possible
+    value = values[-1]
+    m = 10 ** len(str(value))
+    for x in possible:
+        if x + value == total:
+            return True
+        if x * value == total:
+            return True
+        if concat and x * m + value == total:
+            return True
+    return False
 
 def parse(lines):
-    equations = []
-    for line in lines:
-        a, b = line.split(': ')
-        total = int(a)
-        values = tuple(map(int, b.split()))
-        equations.append((total, values))
-    return equations
+    return (tuple(map(int, line.replace(':', '').split())) for line in lines)
 
 def helper(lines, concat):
-    equations = parse(lines)
-    return sum(equation[0] for equation in equations if possible(*equation, concat))
+    return sum(vals[0] for vals in parse(lines) if possible(vals, concat))
 
 solve_p1 = lambda lines: helper(lines, False)
 
