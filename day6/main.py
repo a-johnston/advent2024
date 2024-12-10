@@ -10,26 +10,23 @@ def add(a, b):
 def valid(grid, i, j):
     return i >= 0 and j >= 0 and i < grid.limit[0] and j < grid.limit[1]
 
-def scan(grid, ij, d, check=None):
+def scan(grid, ij, d):
+    cached = grid.hitcache.get((*ij, d))
+    if cached:
+        return cached
     visited = set()
     update = []
     subpath = set()
     hit = None
     while valid(grid, *ij):
-         # If we found the special pos, consider it a hit and break
-        if ij == check:
-            hit = ij
+        key = (*ij, d)
+        if key in grid.hitcache:
+            # Use cached subpath and result if available
+            hit, subpath = grid.hitcache[key]
+            visited |= subpath
             break
-        # If no special pos is provided, check and update the hitcache
-        if not check:
-            key = (*ij, d)
-            if key in grid.hitcache:
-                # Use cached subpath and result if available
-                hit, subpath = grid.hitcache[key]
-                visited |= subpath
-                break
-            # Otherwise, mark the key to be cached when the scan finishes
-            update.append(key)
+        # Otherwise, mark the key to be cached when the scan finishes
+        update.append(key)
         visited.add(ij)
         ij = add(ij, dirs[d])
         if ij in grid.obstacles:
@@ -46,18 +43,21 @@ def scan(grid, ij, d, check=None):
 def walk(grid, pos, check=None):
     d = 0
     turns = set()
-    hit, visited = scan(grid, pos, d, check)
+    hit, visited = scan(grid, pos, d)
+    if check in visited:
+        hit = check
     turns.add((hit, d))
     while hit:
         pos = add(hit, dirs[(d + 2) % len(dirs)])
         d = (d + 1) % len(dirs)
-        hit, path = grid.hitcache[(*pos, d)]
+        hit, path = scan(grid, pos, d)
         if check in path:
-            hit = check  # We don't actually care about path/visited here
+            hit = check
         if (hit, d) in turns:
             return True, visited
         turns.add((hit, d))
-        visited |= path
+        if not check:
+            visited |= path
     return False, visited
 
 def parse(lines):
@@ -69,10 +69,6 @@ def parse(lines):
         for i, c in enumerate(line):
             if c == '#':
                 grid.obstacles.add((i, j))
-    for i in range(grid.limit[0]):
-        for j in range(grid.limit[1]):
-            for k in range(len(dirs)):
-                scan(grid, (i, j), k)
     return grid, pos
 
 def solve_p1(lines):
