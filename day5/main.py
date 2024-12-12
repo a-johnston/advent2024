@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+from adventlib import parse
+
 def parse(lines):
     reqs = defaultdict(set)
     updates = []

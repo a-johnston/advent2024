@@ -1,14 +1,6 @@
 from collections import Counter
 
-pos_mon = { 1, 2, 3 }
-neg_mon = { -1, -2, -3 }
-opts = (pos_mon, neg_mon)
-
-def parse(lines):
-    return (list(map(int, line.split())) for line in lines)
-
-def invert(report):
-    return (-val for val in report)
+from adventlib import parse, vector
 
 def is_safe_helper(it):
     last = next(it)
@@ -20,14 +12,16 @@ def is_safe_helper(it):
     return True
 
 def is_safe(report):
-    return any(is_safe_helper(r) for r in (iter(report), invert(report)))
+    return any(map(is_safe_helper, (iter(report), iter(vector.invert(report)))))
 
-def solve_p1(lines):
-    return sum(is_safe(report) for report in parse(lines))
+@parse.row_map(int)
+def solve_p1(reports):
+    return sum(map(is_safe, reports))
 
-def solve_p2(lines):
+@parse.row_map(int)
+def solve_p2(reports):
     count = 0
-    for report in parse(lines):
+    for report in reports:
         for i in range(len(report)):
             new_report = report[:i] + report[i + 1:]
             if is_safe(new_report):
