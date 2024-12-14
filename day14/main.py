@@ -1,8 +1,6 @@
 from collections import Counter
-from functools import reduce
-from operator import mul
 
-from adventlib import vector
+from adventlib import vector, util
 
 def parse(lines):
     it = iter(lines)
@@ -29,33 +27,26 @@ def solve_p1(lines):
     size, robots = parse(lines)
     c = Counter(quad(size, sim_steps(size, robot, 100)) for robot in robots)
     c.pop(None, None)
-    return reduce(mul, c.values())
+    return util.geosum(c.values())
 
-def has_peaks(values, n=2, l=15):
+def has_peaks(values):
     values = Counter(values).most_common(2)
-    if values[0][1] < l or values[1][1] < l:
-        return False
-    return True
+    return values[0][1] >= 15 and values[1][1] >= 15
 
 def solve_p2(lines):
     size, robots = parse(lines)
     if size[0] < 50:
         return 'n/a'
-
-    i, j = (size[0] - 1) // 2, (size[1] - 1) // 2
-    check = {(ii, jj) for ii in range(i - 1, i + 2) for jj in range(j - 1, j + 2)}
-
-    peak_idxs = []
-    offset = 1
-    steps = 0
-    while True:
-        steps += offset
-        robots = [(sim_steps(size, robot, offset), robot[1]) for robot in robots]
+    steps, x_peak, y_peak = 0, 0, 0
+    while not x_peak or not y_peak:
+        steps += 1
+        robots = [(sim_steps(size, robot, 1), robot[1]) for robot in robots]
         posmap = {robot[0] for robot in robots}
-        if len(peak_idxs) < 2:
-            if has_peaks((xy[0] for xy in posmap)):
-                peak_idxs.append(steps)
-                if len(peak_idxs) == 2:
-                    offset = peak_idxs[1] - peak_idxs[0]
-        if check <= posmap:
+        if not x_peak and has_peaks((xy[0] for xy in posmap)):
+            x_peak = steps
+        if not y_peak and has_peaks((xy[1] for xy in posmap)):
+            y_peak = steps
+    for i in range(max(size)):
+        steps = x_peak + size[0] * i
+        if (steps - y_peak) % size[1] == 0:
             return steps
