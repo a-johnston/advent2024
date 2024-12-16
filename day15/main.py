@@ -14,11 +14,6 @@ def parse(lines, wide):
         blocks.update({xy: block for xy in grid.indexes(rows, block)})
     return robot, blocks, walls, ''.join(moves)
 
-def merge(moves_a, moves_b):
-    if moves_a is None or moves_b is None:
-        return None
-    return {**moves_a, **moves_b}
-
 def get_block_moves(pos, blocks, walls, d):
     if pos in walls:
         return None
@@ -33,7 +28,10 @@ def get_block_moves(pos, blocks, walls, d):
         moves[left] = vector.add(left, d)
     for subpos in tuple(moves.values()):
         if moves is not None and subpos not in moves:
-            moves = merge(moves, get_block_moves(subpos, blocks, walls, d))
+            submoves = get_block_moves(subpos, blocks, walls, d)
+            if submoves is None:
+                return None
+            moves.update(submoves)
     return moves
 
 def do_move(robot, blocks, walls, d):
@@ -46,11 +44,10 @@ def do_move(robot, blocks, walls, d):
         blocks.pop(start)
     return new_pos
 
-def helper(lines, wide):
-    robot, blocks, walls, moves = parse(lines, wide)
+def helper(robot, blocks, walls, moves):
     for move in moves:
         robot = do_move(robot, blocks, walls, dirs[move])
     return sum(j * 100 + i for i, j in blocks if blocks[(i, j)] != ']')
 
-solve_p1 = lambda lines: helper(lines, False)
-solve_p2 = lambda lines: helper(lines, True)
+solve_p1 = lambda lines: helper(*parse(lines, False))
+solve_p2 = lambda lines: helper(*parse(lines, True))
