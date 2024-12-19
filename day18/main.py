@@ -7,12 +7,10 @@ def parse(lines):
     it = iter(lines)
     size, limit = map(int, next(it).split(','))
     rows = [[max_val for _ in range(size)] for __ in range(size)]
-    corrupted = []
     for idx, line in enumerate(it, 1):
         x, y = map(int, line.split(','))
         rows[y][x] = idx
-        corrupted.append(line)
-    return rows, limit, corrupted
+    return rows, limit
 
 def shortest_path(rows, limit):
     start = (0, 0)
@@ -35,17 +33,12 @@ def shortest_path(rows, limit):
     return None
 
 def solve_p1(lines):
-    rows, limit, _ = parse(lines)
-    return shortest_path(rows, limit)
+    return shortest_path(*parse(lines))
 
 def solve_p2(lines):
-    rows, limit, corrupted = parse(lines)
-    lo = limit
-    hi = len(corrupted) + 1
-    while lo + 1 < hi:
-        mid = (hi + lo) // 2
-        if shortest_path(rows, mid) is None:
-            hi = mid
-        else:
-            lo = mid
-    return corrupted[hi - 1]
+    rows, limit  = parse(lines)
+    lohi = [limit, len(lines)]
+    while lohi[0] + 1 < lohi[1]:
+        mid = sum(lohi) // 2
+        lohi[shortest_path(rows, mid) is None] = mid
+    return lines[lohi[1]]
