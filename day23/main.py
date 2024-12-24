@@ -1,8 +1,5 @@
 from collections import defaultdict
 
-def canonical(*args):
-    return tuple(sorted(args))
-
 def parse(lines):
     graph = defaultdict(set)
     for line in lines:
@@ -12,14 +9,13 @@ def parse(lines):
     return graph
 
 def try_grow_clique(graph, clique):
-    possible = set.intersection(*(graph[node] for node in clique)) - set(clique)
+    possible = set.intersection(*(graph[node] for node in clique)) - clique
     for other in possible:
-        yield canonical(other, *clique)
+        yield clique | {other}
 
 def gen_cliques(graph, consider=None, min_size=-1, max_size=-1):
-    cliques = {(node,) for node in (consider or graph)}
-    yield from cliques
-    while True:
+    cliques = {frozenset((node,)) for node in (consider or graph)}
+    while cliques:
         new_cliques = set()
         while cliques:
             head = cliques.pop()
@@ -27,10 +23,9 @@ def gen_cliques(graph, consider=None, min_size=-1, max_size=-1):
                 return
             if len(head) >= min_size:
                 yield head
-            new_cliques |= set(try_grow_clique(graph, head))
+            for new in try_grow_clique(graph, head):
+                new_cliques.add(new)
         cliques = new_cliques
-        if not cliques:
-            return
 
 def solve_p1(lines):
     graph = parse(lines)
@@ -38,4 +33,4 @@ def solve_p1(lines):
     return sum(1 for clique in set(gen_cliques(graph, t_nodes, 3, 3)))
 
 def solve_p2(lines):
-    return ','.join(max(gen_cliques(parse(lines)), key=len))
+    return ','.join(sorted(max(gen_cliques(parse(lines)), key=len)))
